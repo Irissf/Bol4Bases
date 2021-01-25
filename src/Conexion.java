@@ -7,6 +7,8 @@ import java.sql.Statement;
 public class Conexion {
 
     private Connection conexion;
+    private Statement statement;
+    private String consulta;
 
     public void abrirConexion(String bd, String servidor, String usuario, String password) {
         try {
@@ -47,7 +49,7 @@ public class Conexion {
 
     public void consultaAlumno(String cadena) throws SQLException {
 
-        String consulta = "SELECT * FROM alumnos WHERE nombre LIKE \"%"+cadena+"%\""; // Consulta a ejecutar
+        consulta = "SELECT * FROM alumnos WHERE nombre LIKE \"%"+cadena+"%\""; // Consulta a ejecutar
 
         Statement stmt = conexion.createStatement();
         ResultSet rs = stmt.executeQuery(consulta); // Se ejecuta la consulta
@@ -60,12 +62,13 @@ public class Conexion {
         cerrarConexion();
     }
 
-    //NOTAS executeQuery para consultas que recibes datos, executeUpdate consultas que no reciben datos pero si los
+    //NOTAS executeQuery para consultas que recibes datos, executeUpdate consultas que no reciben datos pero si los.
+    //executeUpdate devuelve el numero de filas insertadas.
     
     //========================================EJERCICIO 2=====================================================================
     /**
      *  Dar de alta alumnos y asignaturas
-     * //INSERT INTO alumnos(nombre, apellidos, altura, aula) VALUES ('Carlos', 'Seijo', 180, 99); 
+     * 
      * @param nombre
      * @param apellido
      * @param altura
@@ -74,12 +77,12 @@ public class Conexion {
 
     public void insertarAlumno(String nombre, String apellido, int altura, int aula) throws SQLException{
 
-        String consulta = "INSERT INTO alumnos(nombre, apellidos, altura, aula) VALUES ('" +nombre+ "', '"+ apellido +"',"+altura+", "+ aula +")";
+        consulta = "INSERT INTO alumnos(nombre, apellidos, altura, aula) VALUES ('" +nombre+ "', '"+ apellido +"',"+altura+", "+ aula +")";
 
         boolean numAulaCorrecto = comprobarInt("numero", "aulas", aula);
-        Statement statement = conexion.createStatement();
-         
+        
         if(numAulaCorrecto){
+            statement = conexion.createStatement();
             statement.executeUpdate(consulta);
             System.out.println("los datos fueron introducidos correctamente");
         }else{
@@ -87,17 +90,54 @@ public class Conexion {
         }
     }
 
-    public void insertarAsignatura(int cod, String nombre){
+    public void insertarAsignatura(int cod, String nombre) throws SQLException {
 
-        String consulta = "SELECT cod FROM asignaturas";
+        consulta = "INSERT INTO asignaturas VALUES (" + cod + ",'" + nombre + "');";
+        boolean numAsignaturaCorrecta = comprobarInt("cod", "asignaturas", cod);
+
+        if(!numAsignaturaCorrecta){
+            statement = conexion.createStatement();
+            statement.executeUpdate(consulta);
+            System.out.println("los datos fueron introducidos correctamente");
+        }else{
+            System.out.println("El codigo de asignatura ya existe");
+        }
+
     }   
 
+    //=================================== EJERCICIO 3 ======================================================================
+
+    /**
+     * Dar de baja alumnos y asignaturas.
+     * 
+     * @param id
+     * @throws SQLException
+     */
+    public void eliminarAlumno(int id , String tabla) throws SQLException{
+        
+        consulta = String.format("DELETE FROM alumnos WHERE %s = 3;", (tabla.equals("alumnos"))?"codigo":"cod");
+
+        boolean existe = comprobarInt((tabla.equals("alumnos"))?"codigo":"cod", tabla, id);
+        if (existe) {
+            statement = conexion.createStatement();
+            statement.executeUpdate(consulta);
+            System.out.printf("Eliminado %s", (tabla.equals("alumnos"))?"el alumno":"la asignatura");
+        }else{
+            System.out.printf("no existe %s", (tabla.equals("alumnos"))?"el alumno":"la asignatura");
+        }
+    }
+
+    //=================================== EJERCICIO 4 ======================================================================
+
+    
+  
+    //=================================== FUNCIONES DE UTILIDAD ============================================================
 
     public boolean comprobarInt(String campo, String tabla, int numComparar){
         String consulta = "SELECT " + campo + " FROM " + tabla + "";
 
         try {
-            Statement statement = conexion.createStatement();
+            statement = conexion.createStatement();
             ResultSet result = statement.executeQuery(consulta);
 
             while (result.next()) {
